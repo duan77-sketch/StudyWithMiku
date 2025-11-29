@@ -1,107 +1,133 @@
 <template>
-  <div class="pomodoro-timer" :class="{ hidden: !showControls }">
-    <div class="timer-container">
-      <div class="status-indicator">
-        <span class="status-text" :class="statusClass">{{ statusText }}</span>
+  <div>
+    <div 
+      class="countdown-clock" 
+      :class="{ 'settings-open': showSettings }"
+      @click="toggleSettings"
+    >
+      <div class="clock-display">
+        <span class="minutes">{{ formattedMinutes }}</span>
+        <span class="separator">:</span>
+        <span class="seconds">{{ formattedSeconds }}</span>
       </div>
-      
-      <div class="timer-display">
-        <div class="time-circle">
-          <svg class="progress-ring" width="120" height="120">
-            <circle
-              class="progress-ring-background"
-              cx="60"
-              cy="60"
-              r="54"
-              stroke="rgba(255, 255, 255, 0.2)"
-              stroke-width="5"
-              fill="transparent"
-            />
-            <circle
-              class="progress-ring-fill"
-              :class="statusClass"
-              cx="60"
-              cy="60"
-              r="54"
-              stroke="currentColor"
-              stroke-width="5"
-              fill="transparent"
-              :stroke-dasharray="circumference"
-              :stroke-dashoffset="strokeDashoffset"
-              transform="rotate(-90 60 60)"
-            />
-          </svg>
-          <div class="time-text">
-            <span class="minutes">{{ formattedMinutes }}</span>
-            <span class="separator">:</span>
-            <span class="seconds">{{ formattedSeconds }}</span>
+      <div class="status-badge" :class="statusClass">
+        {{ statusText }}
+      </div>
+    </div>
+    <transition name="fade">
+      <div v-if="showSettings" class="settings-overlay" @click.self="closeSettings">
+        <div class="settings-panel">
+          <div class="settings-header">
+            <h3>番茄钟设置</h3>
+            <button class="close-btn" @click="closeSettings">×</button>
+          </div>
+          
+          <div class="timer-container">
+            <div class="status-indicator">
+              <span class="status-text" :class="statusClass">{{ statusText }}</span>
+            </div>
+            
+            <div class="timer-display">
+              <div class="time-circle">
+                <svg class="progress-ring" width="120" height="120">
+                  <circle
+                    class="progress-ring-background"
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    stroke="rgba(255, 255, 255, 0.2)"
+                    stroke-width="5"
+                    fill="transparent"
+                  />
+                  <circle
+                    class="progress-ring-fill"
+                    :class="statusClass"
+                    cx="60"
+                    cy="60"
+                    r="54"
+                    stroke="currentColor"
+                    stroke-width="5"
+                    fill="transparent"
+                    :stroke-dasharray="circumference"
+                    :stroke-dashoffset="strokeDashoffset"
+                    transform="rotate(-90 60 60)"
+                  />
+                </svg>
+                <div class="time-text">
+                  <span class="minutes">{{ formattedMinutes }}</span>
+                  <span class="separator">:</span>
+                  <span class="seconds">{{ formattedSeconds }}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div class="timer-controls">
+              <button 
+                v-if="!isRunning" 
+                class="control-btn start-btn" 
+                @click="startTimer"
+                :disabled="timeLeft <= 0"
+              >
+                <span class="btn-icon">▶</span>
+              </button>
+              <button 
+                v-else 
+                class="control-btn pause-btn" 
+                @click="pauseTimer"
+              >
+                <span class="btn-icon">⏸</span>
+              </button>
+              <button 
+                class="control-btn reset-btn" 
+                @click="resetTimer"
+              >
+                <span class="btn-icon">↺</span>
+              </button>
+            </div>
+            
+            <div class="timer-settings">
+              <div class="setting-group">
+                <label>专注时间(分钟)</label>
+                <input 
+                  type="number" 
+                  v-model.number="focusDuration" 
+                  min="1" 
+                  max="60"
+                  :disabled="isRunning"
+                />
+              </div>
+              <div class="setting-group">
+                <label>休息时间(分钟)</label>
+                <input 
+                  type="number" 
+                  v-model.number="breakDuration" 
+                  min="1" 
+                  max="30"
+                  :disabled="isRunning"
+                />
+              </div>
+            </div>
+            
+            <div class="pomodoro-count">
+              <span class="count-label">已完成番茄:</span>
+              <div class="count-display">
+                <span 
+                  v-for="i in 4" 
+                  :key="i" 
+                  class="pomodoro-dot"
+                  :class="{ filled: completedPomodoros >= i }"
+                ></span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="timer-controls">
-        <button 
-          v-if="!isRunning" 
-          class="control-btn start-btn" 
-          @click="startTimer"
-          :disabled="timeLeft <= 0"
-        >
-          <span class="btn-icon">▶</span>
-        </button>
-        <button 
-          v-else 
-          class="control-btn pause-btn" 
-          @click="pauseTimer"
-        >
-          <span class="btn-icon">⏸</span>
-        </button>
-        <button 
-          class="control-btn reset-btn" 
-          @click="resetTimer"
-        >
-          <span class="btn-icon">↺</span>
-        </button>
-      </div>
-      
-      <div class="timer-settings">
-        <div class="setting-group">
-          <label>专注时间(分钟)</label>
-          <input 
-            type="number" 
-            v-model.number="focusDuration" 
-            min="1" 
-            max="60"
-            :disabled="isRunning"
-          />
-        </div>
-        <div class="setting-group">
-          <label>休息时间(分钟)</label>
-          <input 
-            type="number" 
-            v-model.number="breakDuration" 
-            min="1" 
-            max="30"
-            :disabled="isRunning"
-          />
-        </div>
-      </div>
-      
-      <div class="pomodoro-count">
-        <span class="count-label">已完成番茄:</span>
-        <div class="count-display">
-          <span 
-            v-for="i in 4" 
-            :key="i" 
-            class="pomodoro-dot"
-            :class="{ filled: completedPomodoros >= i }"
-          ></span>
-        </div>
-      </div>
-    </div>
+    </transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 
 const STATUS = {
   FOCUS: 'focus',
@@ -115,11 +141,7 @@ const currentStatus = ref(STATUS.FOCUS)
 const focusDuration = ref(25)
 const breakDuration = ref(5)
 const completedPomodoros = ref(0)
-const showControls = ref(true)
-const lastActivityTime = ref(Date.now())
-
-import { watch } from 'vue'
-
+const showSettings = ref(false)
 watch(focusDuration, (newVal) => {
   if (currentStatus.value === STATUS.FOCUS && !isRunning.value) {
     timeLeft.value = newVal * 60
@@ -144,10 +166,10 @@ const formattedSeconds = computed(() => {
 
 const statusText = computed(() => {
   switch (currentStatus.value) {
-    case STATUS.FOCUS: return '专注时间'
-    case STATUS.BREAK: return '休息时间'
-    case STATUS.LONG_BREAK: return '长休息'
-    default: return '专注时间'
+    case STATUS.FOCUS: return '专注'
+    case STATUS.BREAK: return '休息'
+    case STATUS.LONG_BREAK: return '长休'
+    default: return '专注'
   }
 })
 
@@ -168,6 +190,14 @@ const strokeDashoffset = computed(() => {
   const progress = (totalTime - timeLeft.value) / totalTime
   return circumference.value * (1 - progress)
 })
+
+const toggleSettings = () => {
+  showSettings.value = !showSettings.value
+}
+
+const closeSettings = () => {
+  showSettings.value = false
+}
 
 const startTimer = () => {
   if (timeLeft.value <= 0) return
@@ -249,31 +279,6 @@ onMounted(() => {
   if ('Notification' in window && Notification.permission === 'default') {
     Notification.requestPermission()
   }
-  
-  const handleMouseMove = () => {
-    showControls.value = true
-    lastActivityTime.value = Date.now()
-  }
-  
-  const handleMouseLeave = () => {
-    showControls.value = false
-  }
-  
-  const checkInactivity = () => {
-    const now = Date.now()
-    if (showControls.value && now - lastActivityTime.value > 3000) {
-      showControls.value = false
-    }
-  }
-  
-  document.addEventListener('mousemove', handleMouseMove)
-  document.addEventListener('mouseleave', handleMouseLeave)
-  
-  const inactivityTimer = setInterval(checkInactivity, 1000)
-  
-  onUnmounted(() => {
-    clearInterval(inactivityTimer)
-  })
 })
 
 onUnmounted(() => {
@@ -284,26 +289,123 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.pomodoro-timer {
+.countdown-clock {
   position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 1000;
-  transition: opacity 0.3s ease;
-}
-
-.pomodoro-timer.hidden {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.timer-container {
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1001;
+  cursor: pointer;
+  transition: all 0.3s ease;
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(20px);
-  border-radius: 15px;
-  padding: 1.5rem;
+  border-radius: 10px;
+  padding: 0.8rem 1.2rem;
   border: 1px solid rgba(255, 255, 255, 0.2);
-  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: white;
+  font-family: 'Courier New', monospace;
+}
+
+.countdown-clock:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.countdown-clock.settings-open {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.clock-display {
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.status-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 15px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.status-badge.focus {
+  color: #ff6b6b;
+}
+
+.status-badge.break {
+  color: #4ecdc4;
+}
+
+.status-badge.long-break {
+  color: #45b7d1;
+}
+
+/* 设置页面样式 */
+.settings-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1002;
+}
+
+.settings-panel {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(30px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.settings-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-header h3 {
+  color: white;
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.2rem;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.3s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 原有番茄钟样式 */
+.timer-container {
+  padding: 1.5rem;
   text-align: center;
   color: white;
 }
@@ -477,5 +579,16 @@ onUnmounted(() => {
 
 .pomodoro-dot.filled {
   background: #ff6b6b;
+}
+
+/* 过渡动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
