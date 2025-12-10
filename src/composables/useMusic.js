@@ -9,7 +9,7 @@ const MUSIC_SOURCE = {
 
 const songs = ref([])
 const loading = ref(false)
-const currentSource = ref(localStorage.getItem('music_source') || MUSIC_SOURCE.LOCAL)
+const currentSource = ref(localStorage.getItem('music_source') || MUSIC_SOURCE.METING)
 const metingConfig = ref(getStoredConfig())
 const playlistId = ref(localStorage.getItem('playlist_id') || DEFAULT_PLAYLIST_ID)
 const platform = ref(localStorage.getItem('music_platform') || 'netease')
